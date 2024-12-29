@@ -1,0 +1,5 @@
+
+[
+  {"Country": "USA", "Sales": 1000, "Date": "2023-01-15", "Product": "Product A", "Region": "North America"},
+  {"Country": "Canada", "Sales": 500, "Date": "2023-01-20", "Product": "Product B", "Region": "North America"}
+]
