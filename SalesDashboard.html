@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Sales Performance Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
+</head>
+<body>
+    <h1>Sales Performance Dashboard</h1>
+    <input type="file" id="fileInput" accept="application/json">
+    <div id="dashboard">
+        <div id="barChart" style="width: 100%; height: 400px;"></div>
+        <div id="pieChart" style="width: 100%; height: 400px;"></div>
+        <div id="lineChart" style="width: 100%; height: 400px;"></div>
+        <div id="scatterPlot" style="width: 100%; height: 400px;"></div>
+        <div id="regionSales" style="width: 100%; height: 400px;"></div>
+    </div>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = JSON.parse(e.target.result);
+                    generateDashboard(data);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function generateDashboard(data) {
+            // Data transformations
+            const salesByCountry = data.reduce((acc, curr) => {
+                acc[curr.Country] = (acc[curr.Country] || 0) + curr.Sales;
+                return acc;
+            }, {});
+
+            const salesByProduct = data.reduce((acc, curr) => {
+                acc[curr.Product] = (acc[curr.Product] || 0) + curr.Sales;
+                return acc;
+            }, {});
+
+            const salesByDate = data.reduce((acc, curr) => {
+                acc[curr.Date] = (acc[curr.Date] || 0) + curr.Sales;
+                return acc;
+            }, {});
+
+            const salesByRegion = data.reduce((acc, curr) => {
+                acc[curr.Region] = (acc[curr.Region] || 0) + curr.Sales;
+                return acc;
+            }, {});
+
+            // Bar Chart: Sales by Country
+            Plotly.newPlot('barChart', [{
+                x: Object.keys(salesByCountry),
+                y: Object.values(salesByCountry),
+                type: 'bar',
+            }], {
+                title: 'Sales by Country'
+            });
+
+            // Pie Chart: Sales by Product
+            Plotly.newPlot('pieChart', [{
+                labels: Object.keys(salesByProduct),
+                values: Object.values(salesByProduct),
+                type: 'pie',
+            }], {
+                title: 'Sales by Product'
+            });
+
+            // Line Chart: Sales over Time
+            const dates = Object.keys(salesByDate).sort();
+            const sortedSales = dates.map(date => salesByDate[date]);
+            Plotly.newPlot('lineChart', [{
+                x: dates,
+                y: sortedSales,
+                type: 'scatter',
+                mode: 'lines+markers'
+            }], {
+                title: 'Sales Over Time'
+            });
+
+            // Grouped Bar Chart: Sales by Product and Country
+            const groupedData = data.reduce((acc, curr) => {
+                if (!acc[curr.Product]) {
+                    acc[curr.Product] = {};
+                }
+                acc[curr.Product][curr.Country] = (acc[curr.Product][curr.Country] || 0) + curr.Sales;
+                return acc;
+            }, {});
+
+            const products = Object.keys(groupedData);
+            const countries = [...new Set(data.map(d => d.Country))];
+
+            const groupedTraces = products.map(product => ({
+                x: countries,
+                y: countries.map(country => groupedData[product][country] || 0),
+                name: product,
+                type: 'bar'
+            }));
+
+            Plotly.newPlot('scatterPlot', groupedTraces, {
+                title: 'Sales Distribution by Product and Country',
+                barmode: 'group'
+            });
+
+            // Bar Chart: Sales by Region
+            Plotly.newPlot('regionSales', [{
+                x: Object.keys(salesByRegion),
+                y: Object.values(salesByRegion),
+                type: 'bar'
+            }], {
+                title: 'Sales by Region'
+            });
+        }
+    </script>
+</body>
+</html>
