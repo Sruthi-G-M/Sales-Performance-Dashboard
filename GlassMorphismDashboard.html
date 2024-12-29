@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Performance Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(145deg, #e0f7fa, #b2ebf2);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #004d40;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        input {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 77, 64, 0.6);
+            background: rgba(255, 255, 255, 0.2);
+            color: #004d40;
+            font-size: 16px;
+            outline: none;
+        }
+
+        input:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        #dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 80%;
+        }
+
+        #dashboard > div {
+            background: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body>
+    <h1>Sales Performance Dashboard</h1>
+    <input type="file" id="fileInput" accept="application/json">
+    <div id="dashboard">
+        <div id="barChart" style="height: 300px;"></div>
+        <div id="pieChart" style="height: 300px;"></div>
+        <div id="lineChart" style="height: 300px;"></div>
+    </div>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = JSON.parse(e.target.result);
+                    generateDashboard(data);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function generateDashboard(data) {
+            // Data transformations
+            const salesByCountry = data.reduce((acc, curr) => {
+                acc[curr.Country] = (acc[curr.Country] || 0) + curr.Sales;
+                return acc;
+            }, {});
+
+            const salesByProduct = data.reduce((acc, curr) => {
+                acc[curr.Product] = (acc[curr.Product] || 0) + curr.Sales;
+                return acc;
+            }, {});
+
+            const salesByDate = data.reduce((acc, curr) => {
+                acc[curr.Date] = (acc[curr.Date] || 0) + curr.Sales;
+                return acc;
+            }, {});
+
+            // Bar Chart: Sales by Country
+            Plotly.newPlot('barChart', [{
+                x: Object.keys(salesByCountry),
+                y: Object.values(salesByCountry),
+                type: 'bar',
+                marker: { color: '#00796b' }
+            }], {
+                title: 'Sales by Country',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            });
+
+            // Pie Chart: Sales by Product
+            Plotly.newPlot('pieChart', [{
+                labels: Object.keys(salesByProduct),
+                values: Object.values(salesByProduct),
+                type: 'pie',
+            }], {
+                title: 'Sales by Product',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            });
+
+            // Line Chart: Sales over Time
+            const dates = Object.keys(salesByDate).sort();
+            const sortedSales = dates.map(date => salesByDate[date]);
+            Plotly.newPlot('lineChart', [{
+                x: dates,
+                y: sortedSales,
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: { color: '#004d40' }
+            }], {
+                title: 'Sales Over Time',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            });
+        }
+    </script>
+</body>
+</html>
